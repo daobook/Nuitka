@@ -130,11 +130,10 @@ def isDebianPackagePython():
 
     if python_version < 0x300:
         return hasattr(sys, "_multiarch")
-    else:
-        with withNoDeprecationWarning():
-            try:
-                from distutils.dir_util import _multiarch
-            except ImportError:
-                return False
-            else:
-                return True
+    with withNoDeprecationWarning():
+        try:
+            from distutils.dir_util import _multiarch
+        except ImportError:
+            return False
+        else:
+            return True

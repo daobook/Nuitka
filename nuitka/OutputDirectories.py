@@ -48,11 +48,7 @@ def getSourceDirectoryPath(onefile=False):
     """Return path inside the build directory."""
 
     # Distinct build folders for oneline mode.
-    if onefile:
-        suffix = ".onefile-build"
-    else:
-        suffix = ".build"
-
+    suffix = ".onefile-build" if onefile else ".build"
     result = Options.getOutputPath(
         path=os.path.basename(getTreeFilenameWithSuffix(_main_module, suffix))
     )
@@ -65,10 +61,7 @@ def getSourceDirectoryPath(onefile=False):
 def getStandaloneDistSuffix():
     """Suffix to use for standalone distribition folder."""
 
-    if Options.shallCreateAppBundle():
-        return ".app"
-    else:
-        return ".dist"
+    return ".app" if Options.shallCreateAppBundle() else ".dist"
 
 
 def getStandaloneDirectoryPath():
@@ -128,7 +121,7 @@ def getResultRunFilename(onefile):
     result = getResultFullpath(onefile=onefile)
 
     if isWin32Windows() and Options.shallTreatUninstalledPython():
-        result = getResultBasepath(onefile=onefile) + ".cmd"
+        result = f'{getResultBasepath(onefile=onefile)}.cmd'
 
     return result
 
@@ -142,4 +135,4 @@ def getPgoRunExecutable():
 
 
 def getPgoRunInputFilename():
-    return getPgoRunExecutable() + ".nuitka-pgo"
+    return f'{getPgoRunExecutable()}.nuitka-pgo'

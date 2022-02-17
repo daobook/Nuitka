@@ -155,11 +155,10 @@ def _injectCcache(env, cc_path, python_prefix, target_arch, assume_yes_for_downl
         scons_details_logger.info(
             "Providing real CC path '%s' via PATH extension." % cc_path
         )
-    else:
-        if isWin32Windows():
-            scons_logger.warning(
-                "Didn't find ccache for C level caching, follow Nuitka User Manual description."
-            )
+    elif isWin32Windows():
+        scons_logger.warning(
+            "Didn't find ccache for C level caching, follow Nuitka User Manual description."
+        )
 
 
 def enableCcache(
@@ -256,14 +255,11 @@ def _getCcacheStatistics(ccache_logfile):
         commands = {}
 
         for line in getFileContentByLine(ccache_logfile):
-            match = re_command.match(line)
-
-            if match:
+            if match := re_command.match(line):
                 pid, command = match.groups()
                 commands[pid] = command
 
-            match = re_result.match(line)
-            if match:
+            if match := re_result.match(line):
                 pid, result = match.groups()
                 result = result.strip()
 
@@ -273,12 +269,13 @@ def _getCcacheStatistics(ccache_logfile):
                     # It seems writing to the file can be lossy, so we can have results for
                     # unknown commands, but we don't use the command yet anyway, so just
                     # be unique.
-                    command = "unknown command leading to " + line
+                    command = f'unknown command leading to {line}'
 
                 # Older ccache on e.g. RHEL6 wasn't explicit about linking.
-                if result == "unsupported compiler option":
-                    if " -o " in command or "unknown command" in command:
-                        result = "called for link"
+                if result == "unsupported compiler option" and (
+                    " -o " in command or "unknown command" in command
+                ):
+                    result = "called for link"
 
                 # But still try to catch this with log output if it happens.
                 if result == "unsupported compiler option":
@@ -290,9 +287,7 @@ def _getCcacheStatistics(ccache_logfile):
                     all_text = []
 
                     for line2 in getFileContentByLine(ccache_logfile):
-                        match = re_anything.match(line2)
-
-                        if match:
+                        if match := re_anything.match(line2):
                             pid2, result = match.groups()
                             if pid == pid2:
                                 all_text.append(result)
@@ -309,11 +304,7 @@ def checkCachingSuccess(source_dir):
     ccache_logfile = getSconsReportValue(source_dir=source_dir, key="CCACHE_LOGFILE")
 
     if ccache_logfile is not None:
-        stats = _getCcacheStatistics(ccache_logfile)
-
-        if not stats:
-            scons_logger.warning("You are not using ccache.")
-        else:
+        if stats := _getCcacheStatistics(ccache_logfile):
             counts = defaultdict(int)
 
             for _command, result in stats.items():
@@ -334,6 +325,8 @@ def checkCachingSuccess(source_dir):
                     % (result, count)
                 )
 
+        else:
+            scons_logger.warning("You are not using ccache.")
     if os.name == "nt":
         clcache_stats_filename = getSconsReportValue(
             source_dir=source_dir, key="CLCACHE_STATS"

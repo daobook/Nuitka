@@ -74,15 +74,14 @@ def _getSconsBinaryCall():
             "ignore",  # Disable Python warnings in case of debug Python.
             getExternalUsePath(inline_path),
         ]
-    else:
-        scons_path = Execution.getExecutablePath("scons")
+    scons_path = Execution.getExecutablePath("scons")
 
-        if scons_path is not None:
-            return [scons_path]
-        else:
-            Tracing.scons_logger.sysexit(
-                "Error, the inline copy of scons is not present, nor a scons binary in the PATH."
-            )
+    if scons_path is not None:
+        return [scons_path]
+    else:
+        Tracing.scons_logger.sysexit(
+            "Error, the inline copy of scons is not present, nor a scons binary in the PATH."
+        )
 
 
 def _getPythonSconsExePathWindows():
@@ -138,7 +137,7 @@ Anaconda Python.
             )
 
     for version_candidate in ("2.7", "2.6", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10"):
-        candidate = Execution.getExecutablePath("python" + version_candidate)
+        candidate = Execution.getExecutablePath(f'python{version_candidate}')
 
         if candidate is not None:
             return candidate
@@ -161,9 +160,12 @@ def _setupSconsEnvironment():
     """
 
     # For Python2, avoid unicode working directory.
-    if Utils.isWin32Windows() and python_version < 0x300:
-        if os.getcwd() != os.getcwdu():
-            os.chdir(getWindowsShortPathName(os.getcwdu()))
+    if (
+        Utils.isWin32Windows()
+        and python_version < 0x300
+        and os.getcwd() != os.getcwdu()
+    ):
+        os.chdir(getWindowsShortPathName(os.getcwdu()))
 
     if Utils.isWin32Windows() and not Options.shallUseStaticLibPython():
         # On Win32, we use the Python.DLL path for some things. We pass it
@@ -399,19 +401,16 @@ def setCommonOptions(options):
     if Options.getLtoMode() != "auto":
         options["lto_mode"] = Options.getLtoMode()
 
-    cpp_defines = Plugins.getPreprocessorSymbols()
-    if cpp_defines:
+    if cpp_defines := Plugins.getPreprocessorSymbols():
         options["cpp_defines"] = ",".join(
             "%s%s%s" % (key, "=" if value else "", value or "")
             for key, value in cpp_defines.items()
         )
 
-    link_dirs = Plugins.getExtraLinkDirectories()
-    if link_dirs:
+    if link_dirs := Plugins.getExtraLinkDirectories():
         options["link_dirs"] = ",".join(link_dirs)
 
-    link_libraries = Plugins.getExtraLinkLibraries()
-    if link_libraries:
+    if link_libraries := Plugins.getExtraLinkLibraries():
         options["link_libraries"] = ",".join(link_libraries)
 
     if Utils.isMacOS() and Options.isStandaloneMode():
@@ -419,12 +418,12 @@ def setCommonOptions(options):
         if macos_minversion is None:
             macos_minversion = detectBinaryMinMacOS(sys.executable)
 
-            if macos_minversion is None:
-                Tracing.general.warning(
-                    "Could not detect minimum macOS version for %r." % sys.executable
-                )
+        if macos_minversion is None:
+            Tracing.general.warning(
+                "Could not detect minimum macOS version for %r." % sys.executable
+            )
 
-                # Default, but not a good idea.
-                macos_minversion = "10.9"
+            # Default, but not a good idea.
+            macos_minversion = "10.9"
 
         options["macos_minversion"] = macos_minversion
